@@ -5,7 +5,7 @@ CC = gcc
 RM = rm -f
 EXT = #.exe
 
-CFLAGS = -m486 -O3 -fomit-frame-pointer -DUNIX -Wall
+CFLAGS = -O3 -fomit-frame-pointer -DUNIX -Wall
 
 C_SRC= io.c sprpck.c bin2obj.c
 
@@ -18,6 +18,7 @@ io.o : io.c bmp.h
 clean:
 	$(RM) *.o
 	$(RM) core
+	$(RM) sprpck$(EXT)
 
 zip:
 	zip -u sprpck $(C_SRC) $(H_SRC) makefile

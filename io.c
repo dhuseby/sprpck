@@ -24,7 +24,6 @@ long ConvertBMP(BYTE * in,long in_size,int *in_w, int *in_h,int line)
     int x,y,pad;
 
     long new_size = 0;
-    long save_insize = in_size;
     int bpp,bpl;
     BYTE r,g,b;
 
@@ -556,61 +555,65 @@ long ConvertFile(BYTE *in,
 
 	case TYPE_PI1:
     {
-      short i,o;
-//      USHORT *puShort;
-      
-			*in_w = org_w = 320;
-			*in_h = org_h = 200;
+        short i,o;
+        //      USHORT *puShort;
 
-      original = malloc(new_size = 64000l);
-    
-      pByte2= in + 2;  // skip first 2 bytes
+        *in_w = org_w = 320;
+        *in_h = org_h = 200;
 
-			pByte = rgb;	    
+        original = malloc(new_size = 64000l);
 
-      for ( i = 15; i >= 0 ; --i)
-      {
-        register BYTE r,g,b;
+        pByte2= in + 2;  // skip first 2 bytes
 
-        if ( (r = ((*pByte2++) & 0x07) << 1) ) ++r;
-        if ( (g = (*pByte2     & 0x70) >> 3) ) ++g;
-        if ( (b = ((*pByte2++) & 0x07) << 1) ) ++b;
+        pByte = rgb;	    
 
-	// printf("r %x g %x b %x \n",r,g,b);
+        for ( i = 15; i >= 0 ; --i)
+        {
+            register BYTE r,g,b;
 
-        *pByte++ = g;
-        *pByte++ = (b<<4) | r;
-      }
-  
-  //	  puShort = (USHORT *)pByte2;    
-  	  
-      pByte = original-16;
-	      
-      for ( i = 3999; i >= 0 ; --i)
-      {
-	register USHORT w0,w1,w2,w3;
+            if ( (r = ((*pByte2++) & 0x07) << 1) ) ++r;
+            if ( (g = (*pByte2     & 0x70) >> 3) ) ++g;
+            if ( (b = ((*pByte2++) & 0x07) << 1) ) ++b;
 
-	w3 = *((USHORT *)pByte2)++;
-	w2 = *((USHORT *)pByte2)++;
-	w1 = *((USHORT *)pByte2)++;
-	w0 = *((USHORT *)pByte2)++;     
+            // printf("r %x g %x b %x \n",r,g,b);
+
+            *pByte++ = g;
+            *pByte++ = (b<<4) | r;
+        }
+
+        //	  puShort = (USHORT *)pByte2;    
+
+        pByte = original-16;
+
+        for ( i = 3999; i >= 0 ; --i)
+        {
+            register USHORT w0,w1,w2,w3;
+
+            w3 = *((USHORT *)pByte2);
+            pByte2++;
+            w2 = *((USHORT *)pByte2);
+            pByte2++;
+            w1 = *((USHORT *)pByte2);
+            pByte2++;
+            w0 = *((USHORT *)pByte2);
+            pByte2++;
 #ifdef i386
-	w3 = (w3<<8)|(w3>>8); // swap byte-order
-	w2 = (w2<<8)|(w2>>8); // hey, gcc knows rorw !!!
-	w1 = (w1<<8)|(w1>>8);
-	w0 = (w0<<8)|(w0>>8);
+            w3 = (w3<<8)|(w3>>8); // swap byte-order
+            w2 = (w2<<8)|(w2>>8); // hey, gcc knows rorw !!!
+            w1 = (w1<<8)|(w1>>8);
+            w0 = (w0<<8)|(w0>>8);
 #endif
-	pByte += 32;
+            pByte += 32;
 
-	for ( o = 15 ; o >= 0 ; --o )
-	{
-	  *--pByte = ((w0&1)<<3) | ((w1&1)<<2) | ((w2&1)<<1) | (w3&1);
-	  w0 >>= 1;
-	  w1 >>= 1;
- 	  w2 >>= 1;
-	  w3 >>= 1;
-	}
-      } 
+            for ( o = 15 ; o >= 0 ; --o )
+            {
+                *--pByte = ((w0&1)<<3) | ((w1&1)<<2) | ((w2&1)<<1) | (w3&1);
+                w0 >>= 1;
+                w1 >>= 1;
+                w2 >>= 1;
+                w3 >>= 1;
+            }
+        } 
     }
     break;
 
@@ -858,7 +861,7 @@ int ReadRGB(char *filename,BYTE *palinput)
 
 	while (fgets( string, 255, stream ))
 	{
-		if (pdest = strstr( string, "pal[]={" ))
+		if ((pdest = strstr( string, "pal[]={" )) != NULL)
 		{
 			fgets( string, 255, stream );
 			//printf( "%s", string);

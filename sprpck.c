@@ -1,63 +1,62 @@
+/*  
+    lynx sprite packer
+    Originally written 97/02/17 42Bastian Schick
 
-
-/* lynx sprite packer
-   written 97/02/17 42Bastian Schick
-
-   input-formats :
-   SPS  - ASCII file, every pixel represented by a hex-value
-          color 0 also with SPACE.
-          every line must end with LF ( or CR LF on !*nix-machines)
-   RAW1 - a byte contains 8 pixels.
-   RAW4 - a byte contains two pixels , each in one nibble.
-          first nibble is the upper-left corner
-   RAW8 - a byte is one pixel
-   PCX  - 8 bit / 1plane ore 1bit/8plane type
-
-	 PI1	- 1 bit / 4 planes (ST-format)
-
+    input-formats :
+    SPS  - ASCII file, every pixel represented by a hex-value
+    color 0 also with SPACE.
+    every line must end with LF ( or CR LF on !*nix-machines)
+    RAW1 - a byte contains 8 pixels.
+    RAW4 - a byte contains two pixels , each in one nibble.
+    first nibble is the upper-left corner
+    RAW8 - a byte is one pixel
+    PCX  - 8 bit / 1plane ore 1bit/8plane type
+    PI1	- 1 bit / 4 planes (ST-format)
     BMP - 4 or 8 bits per pixel, not RLE encoded
 
-DO   = Matthias Domin
-42BS = 42Bastian Schick (elw5basc@gp.fht-esslingen.de)
-CEF  = Carl Forhan (forhan@millcomm.com)
+    Contributors:
+    DO      = Matthias Domin
+    42BS    = 42Bastian Schick  <elw5basc@gp.fht-esslingen.de>
+    CEF     = Carl Forhan       <forhan@millcomm.com>
+    DH      = Dave Huseby       <dave@linuxprogrammer.org>
 
-   last change :
-   YY/MM/DD
-   97/06/09
-   
-   97/03/20  DO    Support of SPS-files
-   97/04/02  42BS  last-bit-bug
-                   added *nix case (no CR !)
-   97/04/05  42BS  SPS: Last line may have LF (CR)
-                   added -v (verbose) and -c (color index compress)
-                   removed TABs from source
-                   output-file is now optional, default in+".spr"
-                   io separated, conversion of the hole file
-                   included PCX conversion.
-   97/04/06  42BS  supports now 8bit/1plane or 1bit/4 plane PCX
-   97/04/07  42BS  added palette output to the PCX-part
-                   also redirection for the SCB
-                   (needed with option -c !!)
-   97/04/28  CEF   Added '!= 0' segment to eliminate compiler warning
-   97/06/09  42BS  Added O_BINARY to IO.C (works now with DOS !)
-   97/09/20  42BS  rebuild the interface ( xxxyyy )
-                   now with offset (-oxxxyyy)
-                   build in RAW1 for monochrome sources
-                   moved O_BINARY to sprpck.h
-                   added line-number to error-message
-   97/11/25  42BS  moved a parameter-check to io.c
-                   changed default-type to PCX
-	 98/07/02  42BS  Started to add PI1-support
-	 98/07/02  42BS  finished PI1-support
-                   Input file need not to be reloaded => speed up
-   98/07/23  42BS  Bug in ConvertPCX with 1 bit/8 planes PCX removed
-   98/07/25  DO    MS Windows BMP-file support added
-   98/08/01  DO    Added splitting of one picture into several sprites -ryyyxxx
-                   Auto-setting of sprite pixel size using -c _and_ -z
-	 98/08/07  42BS  Cleaned up BMP-loading and include bin2obj-stuff
-	 98/08/18	DO	Added 24bit-BMP support (but only for up to 16 colors)
-				DO	-Pfilename: PAL-file can now be given
+    Changelist:
+    YY/MM/DD
+    97/06/09
 
+    97/03/20    DO      Support of SPS-files
+    97/04/02    42BS    last-bit-bug
+                        added *nix case (no CR !)
+    97/04/05    42BS    SPS: Last line may have LF (CR)
+                        added -v (verbose) and -c (color index compress)
+                        removed TABs from source
+                        output-file is now optional, default in+".spr"
+                        io separated, conversion of the hole file
+                        included PCX conversion.
+    97/04/06    42BS    supports now 8bit/1plane or 1bit/4 plane PCX
+    97/04/07    42BS    added palette output to the PCX-part
+                        also redirection for the SCB
+                        (needed with option -c !!)
+    97/04/28    CEF     Added '!= 0' segment to eliminate compiler warning
+    97/06/09    42BS    Added O_BINARY to IO.C (works now with DOS !)
+    97/09/20    42BS    rebuild the interface ( xxxyyy )
+                        now with offset (-oxxxyyy)
+                        build in RAW1 for monochrome sources
+                        moved O_BINARY to sprpck.h
+                        added line-number to error-message
+    97/11/25    42BS    moved a parameter-check to io.c
+                        changed default-type to PCX
+    98/07/02    42BS    Started to add PI1-support
+    98/07/02    42BS    finished PI1-support
+                        Input file need not to be reloaded => speed up
+    98/07/23    42BS    Bug in ConvertPCX with 1 bit/8 planes PCX removed
+    98/07/25    DO      MS Windows BMP-file support added
+    98/08/01    DO      Added splitting of one picture into several sprites -ryyyxxx
+                        Auto-setting of sprite pixel size using -c _and_ -z
+    98/08/07    42BS    Cleaned up BMP-loading and include bin2obj-stuff
+    98/08/18	DO	    Added 24bit-BMP support (but only for up to 16 colors)
+                DO	    -Pfilename: PAL-file can now be given
+    09/12/09    DH      Cleaned up to fix compiler errors/warnings on Linux
 */
 
 /* warning : This Program assumes sizeof(int) = 32 !!
@@ -453,7 +452,7 @@ FILE *batch_handle = NULL;
 char my_argv[CMD_OPT][32],cmdline[128];
 
 /* input */
-char *infile;
+char *infile = NULL;
 BYTE *in,*raw;
 long in_size;
 int  in_w,in_h;
@@ -477,7 +476,7 @@ int line = 1;
 BYTE  bColIndexes[16];
 char *c_ptr,*dot;
 int t_xx, t_yy;
-int orgoff_x, orgoff_y;
+int orgoff_x;/*, orgoff_y; */
 int org_ww, org_hh;
 int nColorsUsed;
 int x,y;	
